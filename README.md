@@ -1,25 +1,37 @@
-#node-owlintuition
+
+# node-owlintuition
 
 
-This is a node.js library for the [OWL Intuition range](http://www.theowl.com) of energy monitoring and control systems. It has been tested against v2.0 and v2.1 of the Network OWL firmware.
+This is a node.js library for the [OWL Intuition range](http://www.theowl.com) of energy monitoring and control systems. It has been tested against v2.0, v2.1 & v4.3 of the Network OWL firmware.
 
-##Installation
+## Installation
 
 Installation is via npm
 
     npm install owlintuition
 
-##Monitoring
+##  Monitoring
 
+### Multicast (local)
 Create an instance of the owl class and connect to the multicast broadcast from the Network OWL,
 
     var OWL = require('owlintuition');
 	var owl = new OWL();
 	owl.monitor();
 
-you can subscribe to four different event messages.
+### Unicast (WAN)
 
-###Electricity
+When your Network OWL is configured to push the message to specific IP:port, then on the server with said IP address, you can run this node code (port 3001 used as an example):
+
+	var OWL = require('owlintuition');
+	var owl = new OWL();
+	owl.monitor(3001);
+
+### Subscription events
+
+You can subscribe to four different event messages.
+
+#### Electricity
 
 The first message is for electricity updates,
 
@@ -31,25 +43,42 @@ The first message is for electricity updates,
 where you will receive an event object of the form,
 
 	
-	{"id":"443719001958",
-	 "signal":
-	    {"rssi":"-66",
-	     "lqi":"127"},
-	 "battery":"100%",
-	 "channels":
-	    {"0":[
-	        {"current":"241.00", "units":"w"},
-	        {"day":"823.49", "units":"wh"}],
-	     "1":[
-	        {"current":"0.00", "units":"w"},
-	        {"day":"0.00", "units":"wh"}],
-	     "2":[
-	        {"current":"0.00", "units":"w"},
-	        {"day":"0.00", "units":"wh"}]}}		
+	   { id: '443719001958',
+	     ver: '2.0',
+	     timestamp: '1528824836',
+	     signal: { rssi: '-78', lqi: '67' },
+	     battery: { level: '100%' },
+	     channels:
+	      { chan:
+	         [ { id: '0',
+	             curr: { units: 'w', '$t': '466.00' },
+	             day: { units: 'wh', '$t': '7288.01' } },
+	           { id: '1',
+	             curr: { units: 'w', '$t': '504.00' },
+	             day: { units: 'wh', '$t': '13623.20' } },
+	           { id: '2',
+	             curr: { units: 'w', '$t': '0.00' },
+	             day: { units: 'wh', '$t': '0.00' } },
+	           { id: '3',
+	             curr: { units: 'w', '$t': '0.00' },
+	             day: { units: 'wh', '$t': '0.00' } },
+	           { id: '4',
+	             curr: { units: 'w', '$t': '0.00' },
+	             day: { units: 'wh', '$t': '0.00' } },
+	           { id: '5',
+	             curr: { units: 'w', '$t': '0.00' },
+	             day: { units: 'wh', '$t': '0.00' } } ] },
+	     property:
+	      { current: { watts: '466.00', cost: '15.02' },
+	        day: { wh: '7288.01', cost: '323.80' },
+	        tariff:
+	         { curr_price: '0.15',
+	           block_limit: '4294967295',
+	           block_usage: '18839' } } } }	
 
 as an argument to your callback function. The channels contain data for the current reading and the daily total for each of the channels/phases on the electricity transmitter. If the transmitter only has 1 channel, the last 2 channels will always contain 0 values.
 
-###Heating
+#### Heating
 
 The second message is for heating updates, and will only occur if a Intuition-c Room Monitor has been installed,	
 
@@ -74,7 +103,7 @@ where you will receive an event object of the form,
 
 passed back as an argument to your callback function. The temperature subsection, contains the current room temperature and the required room temperature. Both values are in degrees Celsius.
 
-###Weather
+#### Weather
 
 The third and last message type is for periodic local weather updates,
 
@@ -93,7 +122,7 @@ where you will receive an event object of the form,
 
 passed back to your callback function. The temperature is the current outside temperature for the postcode assigned to the Network OWL. The text is a textural description of the weather at that postcode.
 
-###Solar
+#### Solar
 
 Finally the fourth message is for solar updates, and will only occur if an Intuition-pv system is installed,
 
@@ -103,17 +132,18 @@ Finally the fourth message is for solar updates, and will only occur if an Intui
 
 where you will receive an event object of the form
 
-      {"id":"443719001958",
-       "current":[
-          {"generating":1000,"units":"w"},
-          {"exporting":730, "units":"w"}],
-       "day":[
-          {"generated":23000, "units":"wh"},
-          {"exported":17000, "units":"wh"}]}
+       { id: '443719001958',
+	     timestamp: '1528824812',
+	     current:
+	      { generating: { units: 'w', '$t': '806.00' },
+	        exporting: { units: 'w', '$t': '0.00' } },
+	     day:
+	      { generated: { units: 'wh', '$t': '13611.39' },
+	        exported: { units: 'wh', '$t': '0.00' } } } 
 
 This contains sections for the current solar readings and the totals for the day. Both sections have generated and exported keys that contain the values for power generated by the PV system and power exported to the electricity grid.
 
-###Unknown
+### Unknown
 
 There is also an error message if the module encounters a 'new' unknown message over multicast,
 
@@ -124,7 +154,7 @@ There is also an error message if the module encounters a 'new' unknown message 
 
 where a Javascript Error object will be returned. The string describing the unknown message will contain both the original multicast XML packet, and the JSON translation of the message.
 
-##Control
+## Control
 
 You can issue commands to the Network OWL by configuring the instance of the owl class with the IP address of the Network OWL device, and your UDP key. 
 
@@ -148,32 +178,32 @@ passed back to your callback function. Where the result is a comma seperated str
 
 **Note:** Only a subset of the commands supported by the Network OWL are implemented at this time. Pull requests are always welcome.
 
-###Version
+### Version
 
 Retrieves the version information from the device.
 
     owl.version();
 
-###Uptime
+### Uptime
 
 Retrieves the run time of the device in days, hours, minutes and seconds.
 
     owl.uptime();
 
 
-###Device
+### Device
 
 Manages interal device list. Allows you to view device details.
 
     owl.device();	
 
-###Mac
+### Mac
 
 Returns the MAC ID of this network owl.
 
 	owl.mac();	
 
-###Boost
+### Boost
 
 Boosts the heating temperature.
 
@@ -182,7 +212,7 @@ Boosts the heating temperature.
 
 will turn the BOOST status ON or OFF respectively.
 
-##Closing Connection
+## Closing Connection
 
 Stop monitoring the multicast socket, and if configured, the control socket,
 
